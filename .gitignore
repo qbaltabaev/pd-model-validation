@@ -1,0 +1,23 @@
+.DS_Store
+.idea/
+.vscode/
+.venv/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+build/
+dist/
+pd-validation-report.html
+
+# Private or local data
+input/
+data/
+*.csv
+*.xlsx
+*.parquet

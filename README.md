@@ -119,10 +119,6 @@ See [methodology](docs/methodology.md) for definitions and interpretation, and [
 - Results are data frames and plain Python objects suitable for notebooks, pipelines, and audit evidence.
 - The checked-in `uv.lock` and `.python-version` make development reproducible on Python 3.14 while the library remains tested across Python 3.10–3.14.
 
-## Contributing
-
-Bug reports, methodology discussions, and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Please do not include confidential portfolio data or model artifacts.
-
 ## License
 
 MIT. See [LICENSE](LICENSE).

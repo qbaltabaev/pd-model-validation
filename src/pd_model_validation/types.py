@@ -36,6 +36,7 @@ class Thresholds:
     direction: Direction = "higher"
 
     def classify(self, value: float) -> Status:
+        """Map a numeric metric value to GREEN, AMBER, RED, or N/A."""
         if not np.isfinite(value):
             return Status.NOT_APPLICABLE
         if self.direction == "higher":
@@ -71,6 +72,7 @@ class ValidationResult:
     details: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-friendly dictionary representation."""
         data = asdict(self)
         data["status"] = self.status.value
         return data

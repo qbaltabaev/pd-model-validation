@@ -19,6 +19,8 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Office/Business :: Financial",
   "Typing :: Typed",
 ]
@@ -34,10 +36,9 @@ stats = ["statsmodels>=0.14"]
 yaml = ["PyYAML>=6.0"]
 excel = ["openpyxl>=3.1"]
 all = ["statsmodels>=0.14", "PyYAML>=6.0", "openpyxl>=3.1"]
+
+[dependency-groups]
 dev = [
-  "statsmodels>=0.14",
-  "PyYAML>=6.0",
-  "openpyxl>=3.1",
   "pytest>=8.0",
   "pytest-cov>=5.0",
   "ruff>=0.9",
@@ -59,6 +60,7 @@ packages = ["src/pd_model_validation"]
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers --strict-config"
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.coverage.run]
 branch = true
@@ -78,7 +80,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["E501"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 strict = true
 warn_unreachable = true
 

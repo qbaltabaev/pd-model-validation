@@ -20,12 +20,15 @@ class ValidationReport:
     tables: dict[str, pd.DataFrame] = field(default_factory=dict)
 
     def to_frame(self) -> pd.DataFrame:
+        """Return all validation findings as a tidy data frame."""
         return pd.DataFrame([result.to_dict() for result in self.results])
 
     def summary(self) -> pd.Series:
+        """Count findings by traffic-light status."""
         return self.to_frame()["status"].value_counts()
 
     def to_json(self, path: str | Path | None = None) -> str:
+        """Serialize results and supporting tables, optionally writing a file."""
         payload = {
             "results": [result.to_dict() for result in self.results],
             "tables": {
@@ -38,11 +41,13 @@ class ValidationReport:
         return text
 
     def to_csv(self, path: str | Path) -> None:
+        """Write the tidy validation findings to CSV."""
         self.to_frame().to_csv(path, index=False)
 
     def to_html(
         self, path: str | Path | None = None, *, title: str = "PD validation report"
     ) -> str:
+        """Render a self-contained HTML report, optionally writing a file."""
         sections = [
             f"<h1>{html.escape(title)}</h1>",
             "<h2>Validation results</h2>",

@@ -9,6 +9,7 @@ from pd_model_validation import PDValidator
 
 
 def make_sample(seed: int, observations: int, *, shift: float = 0.0) -> pd.DataFrame:
+    """Generate a reproducible synthetic sample for the quick-start example."""
     rng = np.random.default_rng(seed)
     utilization = rng.beta(2 + shift, 5, observations)
     age_months = rng.gamma(3, 18, observations)

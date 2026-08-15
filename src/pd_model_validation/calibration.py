@@ -16,6 +16,8 @@ from ._validation import clean_binary_inputs, quantile_bins
 
 @dataclass(frozen=True)
 class CalibrationSummary:
+    """Core aggregate calibration measures for a PD model."""
+
     observed_default_rate: float
     mean_pd: float
     observed_expected_ratio: float
@@ -51,6 +53,7 @@ def calibration_intercept_slope(
 
 
 def calibration_summary(y_true: Iterable[object], y_prob: Iterable[object]) -> CalibrationSummary:
+    """Calculate aggregate calibration, probability-error, and log-loss metrics."""
     target, probability = clean_binary_inputs(y_true, y_prob)
     observed = float(target.mean())
     expected = float(probability.mean())

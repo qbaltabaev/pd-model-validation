@@ -10,6 +10,7 @@ import pandas as pd
 
 
 def as_1d(values: Iterable[object], name: str, *, dtype: Any = None) -> np.ndarray:
+    """Convert an iterable to a non-empty one-dimensional NumPy array."""
     array = np.asarray(values, dtype=dtype)
     if array.ndim != 1:
         raise ValueError(f"{name} must be one-dimensional")
@@ -25,6 +26,7 @@ def clean_binary_inputs(
     allow_single_class: bool = False,
     check_probability: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Validate, align, and remove incomplete pairs from binary model inputs."""
     target = as_1d(y_true, "y_true")
     probability = as_1d(y_prob, "y_prob", dtype=float)
     if len(target) != len(probability):
@@ -47,12 +49,14 @@ def clean_binary_inputs(
 
 
 def require_columns(frame: pd.DataFrame, columns: Iterable[str]) -> None:
+    """Raise a clear error when a data frame lacks required columns."""
     missing = sorted(set(columns).difference(frame.columns))
     if missing:
         raise ValueError(f"missing required columns: {', '.join(missing)}")
 
 
 def quantile_bins(values: np.ndarray, n_bins: int) -> np.ndarray:
+    """Assign stable equal-frequency bin identifiers, including tied values."""
     if n_bins < 2:
         raise ValueError("n_bins must be at least 2")
     ranks = pd.Series(values).rank(method="first", pct=True)

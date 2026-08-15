@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A compact, transparent Python toolkit for developing, independently validating, and monitoring probability-of-default (PD) models. It supports model-level backtesting, feature diagnostics, temporal analysis, sample drift, and Weight of Evidence (WoE) transformation without imposing bank-specific column names or workflows.
+A compact, transparent Python toolkit for developing, independently validating, and monitoring probability-of-default (PD) models. It supports model-level backtesting, feature diagnostics, temporal analysis, sample drift, and Weight of Evidence (WoE) transformation without imposing organization-specific column names or workflows.
 
 > This library provides statistical tools, not regulatory approval. Thresholds are deliberately configurable and should be aligned with the portfolio, default definition, rating philosophy, materiality, and applicable governance.
 
@@ -25,15 +25,13 @@ A compact, transparent Python toolkit for developing, independently validating, 
 python -m pip install git+https://github.com/qbaltabaev/pd-model-validation.git
 ```
 
-For local development:
+For local development, install [uv](https://docs.astral.sh/uv/) and run:
 
 ```bash
 git clone https://github.com/qbaltabaev/pd-model-validation.git
 cd pd-model-validation
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
-pytest
+uv sync --all-extras --dev
+uv run pytest
 ```
 
 ## Quick start
@@ -74,6 +72,16 @@ print(transformer.iv_)
 
 Breakpoints and mappings are fitted only on the reference sample. Missing values receive a dedicated bin; unseen categories receive neutral WoE, preventing target leakage into OOT data.
 
+### Dummy data and fitted model
+
+The repository includes [compact synthetic data](examples/data/dummy_pd_data.csv) with development and out-of-time samples. It contains no real customers, organizations, locations, currencies, or source-system identifiers. Run a complete preprocessing, logistic-regression fit, scoring, and validation workflow with:
+
+```bash
+uv run python examples/dummy_model.py
+```
+
+The example handles numeric and categorical features, missing values, unseen categories, and produces `dummy-pd-validation.html`. Its functions can also be imported in tests or notebooks.
+
 ### Command line
 
 ```bash
@@ -109,6 +117,7 @@ See [methodology](docs/methodology.md) for definitions and interpretation, and [
 - Missing pairs are handled consistently and all effective sample sizes are visible.
 - Metrics are small, composable functions; the orchestrator is optional.
 - Results are data frames and plain Python objects suitable for notebooks, pipelines, and audit evidence.
+- The checked-in `uv.lock` and `.python-version` make development reproducible on Python 3.14 while the library remains tested across Python 3.10–3.14.
 
 ## Contributing
 

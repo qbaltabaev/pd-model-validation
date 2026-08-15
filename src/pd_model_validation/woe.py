@@ -89,6 +89,7 @@ class WoETransformer(TransformerMixin, BaseEstimator):  # type: ignore[misc]
         self.suffix = suffix
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> WoETransformer:
+        """Learn reference-sample bins, WoE mappings, and feature IVs."""
         if not isinstance(X, pd.DataFrame):
             raise TypeError("X must be a pandas DataFrame")
         target = pd.Series(np.asarray(y), index=X.index)
@@ -107,6 +108,7 @@ class WoETransformer(TransformerMixin, BaseEstimator):  # type: ignore[misc]
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Apply fitted WoE mappings without relearning them on new data."""
         if not hasattr(self, "mappings_"):
             raise RuntimeError("transformer is not fitted")
         require_columns(X, (str(feature) for feature in self.feature_names_in_))
@@ -132,5 +134,6 @@ class WoETransformer(TransformerMixin, BaseEstimator):  # type: ignore[misc]
         return pd.DataFrame(transformed, index=X.index)
 
     def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> np.ndarray:
+        """Return transformed feature names using the configured suffix."""
         features = self.feature_names_in_ if input_features is None else np.asarray(input_features)
         return np.asarray([f"{feature}{self.suffix}" for feature in features], dtype=object)

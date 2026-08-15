@@ -11,6 +11,7 @@ from .validator import PDValidator
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Create the command-line argument parser."""
     parser = argparse.ArgumentParser(description="Validate a probability-of-default model")
     parser.add_argument("reference", type=Path, help="reference/development CSV")
     parser.add_argument("--current", type=Path, help="current/OOT CSV")
@@ -23,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run CSV-based validation and write an HTML report."""
     args = build_parser().parse_args(argv)
     reference = pd.read_csv(args.reference)
     current = pd.read_csv(args.current) if args.current else None

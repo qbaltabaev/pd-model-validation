@@ -46,7 +46,7 @@ out_of_time = pd.read_csv("out_of_time.csv")
 report = PDValidator().validate(
     development,
     current=out_of_time,
-    target="default_12m",
+    target="pd90_12m",
     probability="predicted_pd",
     features=["utilization", "age_months", "arrears_count"],
     date="application_date",
@@ -72,22 +72,25 @@ print(transformer.iv_)
 
 Breakpoints and mappings are fitted only on the reference sample. Missing values receive a dedicated bin; unseen categories receive neutral WoE, preventing target leakage into OOT data.
 
-### Dummy data and fitted model
+### Front-book underwriting dataset and model
 
-The repository includes [compact synthetic data](examples/data/dummy_pd_data.csv) with development and out-of-time samples. It contains no real customers, organizations, locations, currencies, or source-system identifiers. Run a complete preprocessing, logistic-regression fit, scoring, and validation workflow with:
+The repository includes [160 synthetic credit-card applications](examples/data/underwriting_pd_data.csv) across development and out-of-time periods. The `pd90_12m` outcome identifies applications that reached at least 90 days past due within 12 months. Features cover income, employment, requested limit, card exposure and utilization, mortgage and auto payments, total loan and deposit balances, recent delinquencies, credit history, indebtedness, inquiries, and bankruptcy. See the [data dictionary and modeling frame](docs/example-data.md) for precise definitions.
+
+The data represents a front-book underwriting use case and contains no real customers, organizations, locations, currencies, or source-system identifiers. Regenerate it deterministically or run the fitted model and complete validation with:
 
 ```bash
-uv run python examples/dummy_model.py
+uv run python examples/generate_underwriting_data.py
+uv run python examples/underwriting_model.py
 ```
 
-The example handles numeric and categorical features, missing values, unseen categories, and produces `dummy-pd-validation.html`. Its functions can also be imported in tests or notebooks.
+The model uses reference-only preprocessing and logistic regression, scores both samples, and produces `underwriting-pd-validation.html`. Its functions can also be imported in tests or notebooks.
 
 ### Command line
 
 ```bash
 pdvalidate development.csv \
   --current out_of_time.csv \
-  --target default_12m \
+  --target pd90_12m \
   --probability predicted_pd \
   --features utilization age_months arrears_count \
   --date application_date \

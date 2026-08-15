@@ -24,7 +24,7 @@ def make_sample(seed: int, observations: int, *, shift: float = 0.0) -> pd.DataF
             "age_months": age_months,
             "arrears_count": arrears_count,
             "predicted_pd": pd_estimate,
-            "default_12m": target,
+            "pd90_12m": target,
         }
     )
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     validation = PDValidator().validate(
         development,
         current=out_of_time,
-        target="default_12m",
+        target="pd90_12m",
         probability="predicted_pd",
         features=["utilization", "age_months", "arrears_count"],
         date="application_date",

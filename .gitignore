@@ -14,7 +14,7 @@ htmlcov/
 build/
 dist/
 pd-validation-report.html
-dummy-pd-validation.html
+underwriting-pd-validation.html
 
 # Private or local data
 input/

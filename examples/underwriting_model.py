@@ -61,14 +61,25 @@ def build_model() -> Pipeline:
     return Pipeline([("preprocess", preprocessing), ("model", LogisticRegression(max_iter=1_000))])
 
 
-def fit_and_score(data: pd.DataFrame) -> tuple[Pipeline, pd.DataFrame, pd.DataFrame]:
-    """Fit on development applications and add predicted PDs to both samples."""
+def fit_and_score(
+    data: pd.DataFrame,
+) -> tuple[Pipeline, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Fit development data and score distinct validation and OOT samples.
+
+    The checked-in ``reference`` population is split chronologically: the
+    earliest 75% trains the pipeline and the latest 25% is a holdout validation
+    sample. The later ``current`` population remains out of time.
+    """
     reference = data.loc[data["sample"] == "reference"].copy()
     current = data.loc[data["sample"] == "current"].copy()
-    model = build_model().fit(reference[FEATURES], reference[TARGET])
-    reference["predicted_pd"] = model.predict_proba(reference[FEATURES])[:, 1]
+    split_at = int(len(reference) * 0.75)
+    development = reference.iloc[:split_at].copy()
+    validation = reference.iloc[split_at:].copy()
+    model = build_model().fit(development[FEATURES], development[TARGET])
+    development["predicted_pd"] = model.predict_proba(development[FEATURES])[:, 1]
+    validation["predicted_pd"] = model.predict_proba(validation[FEATURES])[:, 1]
     current["predicted_pd"] = model.predict_proba(current[FEATURES])[:, 1]
-    return model, reference, current
+    return model, development, validation, current
 
 
 def run_validation(
@@ -76,15 +87,22 @@ def run_validation(
     output_path: str | Path = "underwriting-pd-validation.html",
 ) -> ValidationReport:
     """Fit the underwriting model, validate it, and write an HTML report."""
-    _, reference, current = fit_and_score(load_underwriting_data(data_path))
+    _, development, validation, current = fit_and_score(load_underwriting_data(data_path))
     validator = PDValidator(ValidationConfig(bins=5, min_period_observations=3))
     report = validator.validate(
-        reference,
+        validation,
         current=current,
         target=TARGET,
         probability="predicted_pd",
         features=FEATURES,
         date="application_date",
+        metadata={
+            "model_id": "synthetic-front-book-pd",
+            "model_version": "example-1",
+            "development_rows": len(development),
+            "validation_role": "chronological_holdout",
+            "current_role": "out_of_time",
+        },
     )
     report.to_html(output_path, title="Front-book credit-card PD validation")
     return report

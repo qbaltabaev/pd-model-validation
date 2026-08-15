@@ -35,3 +35,10 @@ def test_bootstrap_gini_is_reproducible() -> None:
     )
     assert estimate == 1.0
     assert lower <= estimate <= upper
+
+
+def test_bootstrap_gini_accepts_arbitrary_scores_like_auc() -> None:
+    estimate, lower, upper = bootstrap_gini(
+        [0, 0, 1, 1], [-2.0, -1.0, 1.0, 2.0], n_bootstrap=20, random_state=3
+    )
+    assert estimate == lower == upper == 1.0

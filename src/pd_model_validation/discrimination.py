@@ -41,7 +41,7 @@ def bootstrap_gini(
         raise ValueError("confidence must be between 0 and 1")
     if n_bootstrap < 1:
         raise ValueError("n_bootstrap must be positive")
-    target, probability = clean_binary_inputs(y_true, y_prob)
+    target, probability = clean_binary_inputs(y_true, y_prob, check_probability=False)
     rng = np.random.default_rng(random_state)
     class_indices = [np.flatnonzero(target == value) for value in (0, 1)]
     estimates = np.empty(n_bootstrap)

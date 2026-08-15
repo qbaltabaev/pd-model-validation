@@ -28,14 +28,19 @@ def test_underwriting_data_and_model_are_executable(tmp_path: Path) -> None:
     assert (data["delinquencies_last_6_months"] <= data["delinquencies_last_12_months"]).all()
     assert set(data["bankruptcy_flag"]) <= {0, 1}
 
-    model, reference, current = fit_and_score(data)
+    model, development, validation, current = fit_and_score(data)
     assert model.classes_.tolist() == [0, 1]
-    assert set(reference[TARGET]) == set(current[TARGET]) == {0, 1}
-    assert reference["predicted_pd"].between(0, 1).all()
+    assert len(development) == 90
+    assert len(validation) == 30
+    assert development["application_date"].max() <= validation["application_date"].min()
+    assert set(development[TARGET]) == set(validation[TARGET]) == set(current[TARGET]) == {0, 1}
+    assert development["predicted_pd"].between(0, 1).all()
+    assert validation["predicted_pd"].between(0, 1).all()
     assert current["predicted_pd"].between(0, 1).all()
-    assert set(FEATURES).issubset(reference)
+    assert set(FEATURES).issubset(validation)
 
     output = tmp_path / "underwriting-report.html"
     report = run_validation(output_path=output)
     assert output.exists()
     assert "score_psi" in set(report.to_frame()["test"])
+    assert report.metadata["context"]["development_rows"] == 90

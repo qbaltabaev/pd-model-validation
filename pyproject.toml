@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling>=1.27"]
+requires = ["hatchling==1.27.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "pd-model-validation"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Transparent, reusable validation tools for probability-of-default models"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,12 +31,6 @@ dependencies = [
   "scipy>=1.10",
 ]
 
-[project.optional-dependencies]
-stats = ["statsmodels>=0.14"]
-yaml = ["PyYAML>=6.0"]
-excel = ["openpyxl>=3.1"]
-all = ["statsmodels>=0.14", "PyYAML>=6.0", "openpyxl>=3.1"]
-
 [dependency-groups]
 dev = [
   "pytest>=8.0",
@@ -57,6 +51,9 @@ Issues = "https://github.com/qbaltabaev/pd-model-validation/issues"
 [tool.hatch.build.targets.wheel]
 packages = ["src/pd_model_validation"]
 
+[tool.hatch.version]
+path = "src/pd_model_validation/_version.py"
+
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers --strict-config"
 testpaths = ["tests"]
@@ -69,7 +66,7 @@ source = ["pd_model_validation"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-fail_under = 85
+fail_under = 90
 
 [tool.ruff]
 line-length = 100

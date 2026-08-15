@@ -20,6 +20,15 @@ def test_woe_table_is_finite() -> None:
     assert table["iv_component"].sum() > 0
 
 
+def test_woe_rejects_invalid_settings_and_targets() -> None:
+    with pytest.raises(ValueError, match="smoothing"):
+        woe_table(pd.Series(["a", "b"]), pd.Series([0, 1]), smoothing=0)
+    with pytest.raises(ValueError, match="only 0 and 1"):
+        woe_table(pd.Series(["a", "b"]), pd.Series([0, 2]))
+    with pytest.raises(ValueError, match="both classes"):
+        woe_table(pd.Series(["a", "b"]), pd.Series([0, 0]))
+
+
 def test_transformer_reuses_bins_and_handles_unknown(reference) -> None:
     transformer = WoETransformer(bins=5).fit(reference[["x1", "category"]], reference["target"])
     transformed = transformer.transform(
@@ -30,10 +39,38 @@ def test_transformer_reuses_bins_and_handles_unknown(reference) -> None:
     assert transformed.loc[0, "category_woe"] == 0.0
     assert set(transformer.iv_) == {"x1", "category"}
 
+    strict = WoETransformer(bins=5, handle_unknown="error").fit(
+        reference[["category"]], reference["target"]
+    )
+    with pytest.raises(ValueError, match="unknown bins"):
+        strict.transform(pd.DataFrame({"category": ["new"]}))
+
 
 def test_unfitted_transformer_raises(reference) -> None:
     with pytest.raises(RuntimeError, match="not fitted"):
         WoETransformer().transform(reference[["x1"]])
+    with pytest.raises(RuntimeError, match="not fitted"):
+        WoETransformer().get_feature_names_out()
+
+
+@pytest.mark.parametrize(
+    ("transformer", "message"),
+    [
+        (WoETransformer(bins=1), "bins"),
+        (WoETransformer(smoothing=0), "smoothing"),
+        (WoETransformer(handle_unknown="invalid"), "handle_unknown"),  # type: ignore[arg-type]
+    ],
+)
+def test_transformer_rejects_invalid_configuration(reference, transformer, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        transformer.fit(reference[["x1"]], reference["target"])
+
+
+def test_transformer_feature_names_must_match_fit(reference) -> None:
+    transformer = WoETransformer().fit(reference[["x1"]], reference["target"])
+    assert transformer.get_feature_names_out().tolist() == ["x1_woe"]
+    with pytest.raises(ValueError, match="must match"):
+        transformer.get_feature_names_out(["x2"])
 
 
 def test_feature_diagnostics(reference) -> None:
@@ -53,7 +90,29 @@ def test_vif_and_coefficient_tests(reference) -> None:
     assert coefficients["p_value"].between(0, 1).all()
 
 
+def test_coefficient_test_rejects_rank_deficiency_and_iteration_errors(reference) -> None:
+    reference["duplicate"] = reference["x1"]
+    with pytest.raises(ValueError, match="rank deficient"):
+        logistic_coefficient_test(reference, ["x1", "duplicate"], target="target")
+    with pytest.raises(ValueError, match="max_iter"):
+        logistic_coefficient_test(reference, ["x1"], target="target", max_iter=0)
+
+
 def test_vif_rejects_constant(reference) -> None:
     reference["constant"] = 1
     with pytest.raises(ValueError, match="constant"):
         variance_inflation_factors(reference, ["x1", "constant"])
+
+
+def test_vif_flags_exact_multicollinearity() -> None:
+    frame = pd.DataFrame({"x1": np.arange(20.0), "x2": np.arange(20.0) * 2})
+    result = variance_inflation_factors(frame, ["x1", "x2"])
+    assert np.isinf(result["vif"]).all()
+
+
+def test_correlation_returns_na_for_constant_feature(reference) -> None:
+    reference["constant"] = 1.0
+    result = correlation_diagnostics(reference, ["x1", "constant"])
+    constant = result.loc[result["feature"] == "constant"].iloc[0]
+    assert np.isnan(constant["max_abs_correlation"])
+    assert constant["correlated_with"] is None

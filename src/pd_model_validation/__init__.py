@@ -1,8 +1,17 @@
 """Validation tools for probability-of-default models."""
 
 from ._version import __version__
-from .calibration import CalibrationSummary, calibration_summary, calibration_table, hosmer_lemeshow
+from .calibration import (
+    CalibrationRegression,
+    CalibrationSummary,
+    calibration_by_group,
+    calibration_regression,
+    calibration_summary,
+    calibration_table,
+    hosmer_lemeshow,
+)
 from .discrimination import auc, bootstrap_gini, gini, ks_statistic
+from .exceptions import InputValidationError
 from .features import (
     correlation_diagnostics,
     feature_information_value,
@@ -16,13 +25,16 @@ from .stability import (
     gini_degradation,
     performance_by_period,
     population_stability_index,
+    population_stability_table,
 )
 from .types import Status, Thresholds, ValidationResult
 from .validator import PDValidator, ValidationConfig
 from .woe import WoETransformer, information_value, woe_table
 
 __all__ = [
+    "CalibrationRegression",
     "CalibrationSummary",
+    "InputValidationError",
     "PDValidator",
     "Status",
     "Thresholds",
@@ -33,6 +45,8 @@ __all__ = [
     "__version__",
     "auc",
     "bootstrap_gini",
+    "calibration_by_group",
+    "calibration_regression",
     "calibration_summary",
     "calibration_table",
     "correlation_diagnostics",
@@ -46,6 +60,7 @@ __all__ = [
     "logistic_coefficient_test",
     "performance_by_period",
     "population_stability_index",
+    "population_stability_table",
     "univariate_gini",
     "variance_inflation_factors",
     "woe_table",

@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from pd_model_validation import (
     feature_stability,
     gini_degradation,
     performance_by_period,
     population_stability_index,
+    population_stability_table,
 )
 
 
@@ -20,6 +22,29 @@ def test_psi_detects_numeric_and_categorical_shift() -> None:
     actual = rng.normal(1, 1, 2_000)
     assert population_stability_index(expected, actual) > 0.25
     assert population_stability_index(["a"] * 90 + ["b"] * 10, ["a"] * 50 + ["b"] * 50) > 0.25
+
+
+def test_psi_uniform_strategy_and_input_validation() -> None:
+    assert population_stability_index([0, 1, 2], [1, 2, 3], bins=2, strategy="uniform") > 0
+    with pytest.raises(ValueError, match="bins"):
+        population_stability_table([1, 2], [1, 2], bins=1)
+    with pytest.raises(ValueError, match="epsilon"):
+        population_stability_table([1, 2], [1, 2], epsilon=0)
+    with pytest.raises(ValueError, match="strategy"):
+        population_stability_table([1, 2], [1, 2], strategy="invalid")
+    with pytest.raises(ValueError, match="non-null"):
+        population_stability_table([np.nan, np.nan], [1, 2])
+
+
+def test_psi_table_exposes_contributions_and_missing_bucket() -> None:
+    table = population_stability_table([1.0, 2.0, np.nan], [1.0, np.nan, np.nan], bins=2)
+    assert "<MISSING>" in set(table["bucket"])
+    assert np.isclose(
+        table["psi_contribution"].sum(),
+        population_stability_index([1.0, 2.0, np.nan], [1.0, np.nan, np.nan], bins=2),
+    )
+    assert np.isclose(table["expected_share"].sum(), 1.0)
+    assert np.isclose(table["actual_share"].sum(), 1.0)
 
 
 def test_feature_stability_is_ranked(reference, current) -> None:

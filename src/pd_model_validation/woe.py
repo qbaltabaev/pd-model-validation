@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -31,6 +32,8 @@ def woe_table(
     ).dropna(subset=["target"])
     if not set(data["target"].unique()).issubset({0, 1}):
         raise ValueError("target must contain only 0 and 1")
+    if data["target"].nunique() != 2:
+        raise ValueError("target must contain both classes")
     grouped = data.groupby("bin", observed=True)["target"].agg(["count", "sum"])
     grouped = grouped.rename(columns={"sum": "events"})
     grouped["non_events"] = grouped["count"] - grouped["events"]
@@ -59,6 +62,8 @@ def information_value(
 def _fit_and_apply_bins(
     fit_values: pd.Series, transform_values: pd.Series, bins: int
 ) -> tuple[np.ndarray | None, pd.Series]:
+    if bins < 2:
+        raise ValueError("bins must be at least 2")
     if pd.api.types.is_numeric_dtype(fit_values):
         clean = pd.to_numeric(fit_values, errors="coerce").dropna().to_numpy(dtype=float)
         if clean.size == 0:
@@ -83,15 +88,29 @@ class WoETransformer(TransformerMixin, BaseEstimator):  # type: ignore[misc]
     retain their observed levels. Unknown levels map to neutral WoE (0).
     """
 
-    def __init__(self, *, bins: int = 10, smoothing: float = 0.5, suffix: str = "_woe"):
+    def __init__(
+        self,
+        *,
+        bins: int = 10,
+        smoothing: float = 0.5,
+        suffix: str = "_woe",
+        handle_unknown: Literal["zero", "error"] = "zero",
+    ):
         self.bins = bins
         self.smoothing = smoothing
         self.suffix = suffix
+        self.handle_unknown = handle_unknown
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> WoETransformer:
         """Learn reference-sample bins, WoE mappings, and feature IVs."""
         if not isinstance(X, pd.DataFrame):
             raise TypeError("X must be a pandas DataFrame")
+        if self.bins < 2:
+            raise ValueError("bins must be at least 2")
+        if self.smoothing <= 0:
+            raise ValueError("smoothing must be positive")
+        if self.handle_unknown not in {"zero", "error"}:
+            raise ValueError("handle_unknown must be 'zero' or 'error'")
         target = pd.Series(np.asarray(y), index=X.index)
         if len(target) != len(X):
             raise ValueError("X and y must have the same length")
@@ -128,12 +147,18 @@ class WoETransformer(TransformerMixin, BaseEstimator):  # type: ignore[misc]
                     .astype("string")
                     .fillna(MISSING_BIN)
                 )
-            transformed[f"{feature}{self.suffix}"] = (
-                binned.map(self.mappings_[feature]).fillna(0.0).astype(float)
-            )
+            mapped = binned.map(self.mappings_[feature])
+            if self.handle_unknown == "error" and mapped.isna().any():
+                unknown = sorted(binned.loc[mapped.isna()].unique().tolist())
+                raise ValueError(f"unknown bins for {feature}: {', '.join(unknown)}")
+            transformed[f"{feature}{self.suffix}"] = mapped.fillna(0.0).astype(float)
         return pd.DataFrame(transformed, index=X.index)
 
     def get_feature_names_out(self, input_features: Sequence[str] | None = None) -> np.ndarray:
         """Return transformed feature names using the configured suffix."""
+        if not hasattr(self, "feature_names_in_"):
+            raise RuntimeError("transformer is not fitted")
         features = self.feature_names_in_ if input_features is None else np.asarray(input_features)
+        if input_features is not None and not np.array_equal(features, self.feature_names_in_):
+            raise ValueError("input_features must match the fitted feature names")
         return np.asarray([f"{feature}{self.suffix}" for feature in features], dtype=object)

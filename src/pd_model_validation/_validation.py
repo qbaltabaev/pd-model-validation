@@ -56,9 +56,23 @@ def require_columns(frame: pd.DataFrame, columns: Iterable[str]) -> None:
 
 
 def quantile_bins(values: np.ndarray, n_bins: int) -> np.ndarray:
-    """Assign stable equal-frequency bin identifiers, including tied values."""
+    """Assign equal-frequency bins without splitting tied values.
+
+    The effective number of bins may be lower than ``n_bins`` when the input
+    contains few unique values. Bin identifiers are contiguous and ordered.
+    """
     if n_bins < 2:
         raise ValueError("n_bins must be at least 2")
-    ranks = pd.Series(values).rank(method="first", pct=True)
-    result = np.minimum((ranks.to_numpy() * n_bins).astype(int), n_bins - 1)
-    return np.asarray(result, dtype=int)
+    series = pd.Series(values)
+    if series.isna().any():
+        raise ValueError("values must not contain missing entries")
+    if series.nunique() == 1:
+        return np.zeros(len(series), dtype=int)
+    ranked_unique = series.rank(method="dense").astype(int) - 1
+    unique_values = np.sort(series.unique())
+    unique_counts = series.value_counts(sort=False).reindex(unique_values).to_numpy(dtype=int)
+    cumulative_midpoints = np.cumsum(unique_counts) - unique_counts / 2.0
+    raw_bins = np.floor(cumulative_midpoints / len(series) * n_bins).astype(int)
+    raw_bins = np.clip(raw_bins, 0, n_bins - 1)
+    contiguous = pd.factorize(raw_bins, sort=True)[0]
+    return np.asarray(contiguous[ranked_unique.to_numpy()], dtype=int)

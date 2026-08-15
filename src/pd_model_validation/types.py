@@ -35,20 +35,27 @@ class Thresholds:
     amber: float
     direction: Direction = "higher"
 
+    def __post_init__(self) -> None:
+        """Reject ambiguous or internally inconsistent thresholds."""
+        if self.direction not in {"higher", "lower"}:
+            raise ValueError("direction must be 'higher' or 'lower'")
+        if not np.isfinite(self.green) or not np.isfinite(self.amber):
+            raise ValueError("green and amber thresholds must be finite")
+        if self.direction == "higher" and self.green < self.amber:
+            raise ValueError("green must be >= amber when higher values are better")
+        if self.direction == "lower" and self.green > self.amber:
+            raise ValueError("green must be <= amber when lower values are better")
+
     def classify(self, value: float) -> Status:
         """Map a numeric metric value to GREEN, AMBER, RED, or N/A."""
         if not np.isfinite(value):
             return Status.NOT_APPLICABLE
         if self.direction == "higher":
-            if self.green < self.amber:
-                raise ValueError("green must be >= amber when higher values are better")
             if value >= self.green:
                 return Status.GREEN
             if value >= self.amber:
                 return Status.AMBER
             return Status.RED
-        if self.green > self.amber:
-            raise ValueError("green must be <= amber when lower values are better")
         if value <= self.green:
             return Status.GREEN
         if value <= self.amber:
@@ -64,11 +71,17 @@ class ValidationResult:
     value: float
     status: Status = Status.INFO
     scope: str = "model"
+    feature: str | None = None
+    group: str | None = None
     segment: str | None = None
     period: str | None = None
     n_obs: int | None = None
     threshold_green: float | None = None
     threshold_amber: float | None = None
+    p_value: float | None = None
+    confidence_lower: float | None = None
+    confidence_upper: float | None = None
+    reason: str | None = None
     details: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

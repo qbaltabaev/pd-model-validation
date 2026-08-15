@@ -7,7 +7,7 @@ The example dataset represents front-book credit-card applications observed at t
 | Column | Definition |
 |---|---|
 | `application_id` | Synthetic row identifier with no source-system meaning |
-| `sample` | Chronological `reference` development sample or later `current` sample |
+| `sample` | Chronological `reference` pool used for development/holdout splitting, or later `current` out-of-time sample |
 | `application_date` | Credit-card application date |
 | `pd90_12m` | 1 if the account reached at least 90 days past due within 12 months after application; otherwise 0 |
 
@@ -35,4 +35,4 @@ The example dataset represents front-book credit-card applications observed at t
 | `debt_to_income_ratio` | Estimated monthly debt service divided by monthly income |
 | `bankruptcy_flag` | 1 when a prior bankruptcy is present; otherwise 0 |
 
-The 160 rows are generated from a fixed seed and include 120 reference and 40 current applications. Monetary values are synthetic unitless amounts. A few income and deposit values are deliberately missing to exercise preprocessing. The data contains no people, organizations, locations, currencies, or operational identifiers and must not be used for real credit decisions.
+The 160 rows are generated from a fixed seed and include 120 reference and 40 current applications. The executable model uses the earliest 90 reference rows for development, the next 30 for holdout validation, and all 40 current rows for out-of-time assessment. Monetary values are synthetic unitless amounts. A few income and deposit values are deliberately missing to exercise preprocessing. The data contains no people, organizations, locations, currencies, or operational identifiers and must not be used for real credit decisions.
